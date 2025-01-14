@@ -113,6 +113,32 @@ class ActionDecoder(nn.Module):
 
 
 class CVAE(nn.Module):
+    """
+    Convolutional Variational Autoencoder (CVAE) for action chunking.
+
+    Attributes:
+        encoder (ActionEncoder): Encoder network to process input joints and actions.
+        mu_phi (nn.Linear): Linear layer to compute the mean of the latent variable.
+        logvar (nn.Linear): Linear layer to compute the log variance of the latent variable.
+        decoder (ActionDecoder): Decoder network to generate output action sequences.
+
+    Methods:
+        encode(joints, actions):
+            Encodes the input joints and actions into latent space.
+
+        reparametrize(mu_phi, logvar):
+            Reparameterizes the latent variable using the mean and log variance.
+
+        decode(images, z, joint_pos):
+            Decodes the latent variable to generate output action sequences.
+
+        forward(current_joints, future_actions, images):
+            Forward pass through the CVAE model.
+
+        loss_fn(predict, target, mu_phi, logvar):
+            Computes the loss function, including KL divergence and reconstruction loss.
+    """
+
     def __init__(self):
         super(CVAE, self).__init__()
         self.encoder = ActionEncoder(
@@ -149,3 +175,13 @@ class CVAE(nn.Module):
 
         # Total loss
         return kl_divergence + reconstruction
+
+
+if __name__ == '__main__':
+    model = CVAE().to(device)
+    with torch.no_grad():
+        pred_actions, mu_phi, logvar = model(
+            torch.randn(4, 14).to(device), torch.randn(4, 14).to(device), torch.randn(4, 3, 480, 640).to(device))
+        print(pred_actions.shape, mu_phi.shape, logvar.shape)
+        print(model.loss_fn(torch.randn(4, 14).to(device), torch.randn(
+            4, 14).to(device), torch.randn(1, 128).to(device), torch.randn(1, 128).to(device)))
